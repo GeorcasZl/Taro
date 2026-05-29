@@ -1,0 +1,71 @@
+{
+  "schema_version": "taro.document.v0",
+  "document_id": "doc_fixture_ordinary_dialogue",
+  "revision": 4,
+  "project": {
+    "title": "Ordinary Dialogue Fixture"
+  },
+  "defaults": {
+    "display_mode_id": "dialogue_bubble"
+  },
+  "story": {
+    "entry_group_id": "group_intro",
+    "groups": [
+      {
+        "id": "group_intro",
+        "position_id": "pos_intro",
+        "items": [
+          {
+            "id": "item_intro_1",
+            "kind": "text",
+            "order": 0,
+            "text": "Mira: The rain stopped.",
+            "speaker": "Mira",
+            "display_mode_id": "dialogue_bubble",
+            "blocking": true
+          },
+          {
+            "id": "item_bg_intro",
+            "kind": "stage_change",
+            "order": 1,
+            "blocking": false,
+            "background_resource_id": "res_bg_rainy_street"
+          }
+        ],
+        "metadata": {}
+      },
+      {
+        "id": "group_reply",
+        "position_id": "pos_reply",
+        "items": [
+          {
+            "id": "item_reply_1",
+            "kind": "text",
+            "order": 0,
+            "text": "Ren: Quiet never lasts here.",
+            "speaker": "Ren",
+            "display_mode_id": "dialogue_bubble",
+            "blocking": true
+          }
+        ],
+        "metadata": {}
+      }
+    ]
+  },
+  "resources": [
+    {
+      "id": "res_bg_rainy_street",
+      "kind": "image",
+      "path": "assets/rainy-street.png"
+    }
+  ],
+  "display_modes": [
+    {
+      "id": "dialogue_bubble",
+      "name": "Dialogue Bubble",
+      "text_blocking_default": true,
+      "click_behavior": "complete_text_then_next_group"
+    }
+  ],
+  "diagnostics": []
+}

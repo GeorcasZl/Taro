@@ -1,0 +1,28 @@
+{
+  "name": "taro",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @taro/core && npm run build --workspace @taro/studio",
+    "build:studio": "npm run build --workspace @taro/studio",
+    "check": "npm run docs:check && npm run typecheck && npm run build && npm test",
+    "dev": "npm run dev --workspace @taro/studio",
+    "docs:check": "bash scripts/check-docs.sh",
+    "export:mvp1": "npm run build && node scripts/export-mvp1-fixture.mjs",
+    "test": "npm run test --workspace @taro/core && npm run test --workspace @taro/studio",
+    "test:browser": "playwright test",
+    "test:studio": "npm run test --workspace @taro/studio",
+    "typecheck": "npm run typecheck --workspace @taro/core && npm run typecheck --workspace @taro/studio",
+    "typecheck:studio": "npm run typecheck --workspace @taro/studio"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.8.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
+  }
+}
