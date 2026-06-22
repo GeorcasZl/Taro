@@ -29,7 +29,7 @@ test("MVP1 ordinary dialogue loop reaches export parity", async ({ page }) => {
 
   await groupOneTextItems.nth(1).press(primaryK);
   await page.getByRole("button", { name: "Set rainy street background" }).click();
-  await expect(page.getByText("Background: Rainy street")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: Rainy street")).toBeVisible();
 
   await page.getByRole("button", { name: "Export local package" }).click();
   await expect(page.getByText("Export ready")).toBeVisible();
@@ -183,27 +183,55 @@ test("MVP1.1 Cmd/Ctrl+K inserts stage change at current text caret", async ({ pa
   await expect(groups).toHaveCount(1);
   await expect(groups.first()).toContainText("A");
   await expect(groups.first()).toContainText("Stage change: Rainy street background");
-  await expect(page.getByText("Background: Rainy street")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: Rainy street")).toBeVisible();
 });
 
 test("MVP1 Canvas derives linear stage background for later Groups", async ({ page }) => {
   await page.goto("/");
 
   const editor = page.getByRole("textbox", { name: "Text item in Group 1" });
-  await expect(page.getByText("Background: None set")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: None set")).toBeVisible();
 
   await editor.fill("A");
   await editor.press(primaryK);
   await page.getByRole("button", { name: "Set rainy street background" }).click();
-  await expect(page.getByText("Background: Rainy street")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: Rainy street")).toBeVisible();
 
   await editor.press("Enter");
   await page.getByRole("textbox", { name: "Text item in Group 2" }).fill("B");
-  await expect(page.getByText("group_2")).toBeVisible();
-  await expect(page.getByText("Background: Rainy street")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("group_2")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: Rainy street")).toBeVisible();
 
   await page.getByRole("button", { name: "Export local package" }).click();
   await expect(page.getByText("Export ready")).toBeVisible();
+  await expect(page.getByText("Preview/export trace matched")).toBeVisible();
+});
+
+test("MVP1 Preview player advances locally and preserves export parity", async ({ page }) => {
+  await page.goto("/");
+
+  const firstText = page.getByRole("textbox", { name: "Text item in Group 1" });
+  await firstText.fill("A");
+  await firstText.press(primaryK);
+  await page.getByRole("button", { name: "Set rainy street background" }).click();
+
+  await firstText.click();
+  await firstText.press("Enter");
+  await page.getByRole("textbox", { name: "Text item in Group 2" }).fill("B");
+  await firstText.click();
+
+  const preview = page.getByRole("region", { name: "Preview" });
+  await expect(preview.getByText("A", { exact: true })).toBeVisible();
+  await expect(preview.getByText("Background: Rainy street")).toBeVisible();
+
+  await preview.getByRole("button", { name: "Preview Next" }).click();
+  await expect(preview.getByText("B", { exact: true })).toBeVisible();
+  await expect(preview.getByText("Background: Rainy street")).toBeVisible();
+
+  await preview.getByRole("button", { name: "Preview Restart" }).click();
+  await expect(preview.getByText("A", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Export local package" }).click();
   await expect(page.getByText("Preview/export trace matched")).toBeVisible();
 });
 
@@ -219,7 +247,7 @@ test("MVP1 repeated same background insertion creates visible stage changes", as
   await page.getByRole("button", { name: "Set rainy street background" }).click();
 
   await expect(page.getByText("Stage change: Rainy street background")).toHaveCount(2);
-  await expect(page.getByText("Background: Rainy street")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Canvas" }).getByText("Background: Rainy street")).toBeVisible();
 });
 
 test("MVP1.1 normal authoring does not require visible composer or plus controls", async ({ page }) => {

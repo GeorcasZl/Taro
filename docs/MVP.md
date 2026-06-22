@@ -65,6 +65,8 @@ Required MVP1 vertical-slice Studio behavior:
 - `Enter`, `Option/Alt+Enter`, and `Shift+Enter` follow the MVP input rules.
 - `Cmd/Ctrl+K` opens a transient add/search surface.
 - Add/Search can add a minimal rainy-street background through `resource.add` and `stage.set_background`; the current cursor or selection decides whether it lands in the current Group, an empty Group, or a new stage-only Group at a between-Group insertion point.
+- Studio Preview shows a minimal playable current-Group view with authored text, inherited stage/background label, local `Next` and `Restart` controls, and source trace for current Group, item ids, and stage source.
+- Studio Preview playback state is local Preview/editor state and does not mutate the authoring Document.
 - Preview and Export expose trace parity evidence.
 - Browser tests cover the ordinary-dialogue creator loop.
 

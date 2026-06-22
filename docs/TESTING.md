@@ -20,6 +20,32 @@ Use the smallest evidence set that proves the change:
 - Export smoke tests for runtime parity.
 - Documentation checks for product-contract changes.
 
+## Verification Command Tiers
+
+Use the fast gate during ordinary implementation:
+
+```bash
+npm run check:fast
+```
+
+This runs docs checks, TypeScript checks, and unit tests.
+
+Use the full gate for milestone handoff:
+
+```bash
+npm run check:full
+```
+
+This runs the existing full repository check, all browser tests, and MVP1 export smoke.
+
+Use the MVP1 vertical-loop gate when a change touches Writing, Canvas, Preview, or Export parity:
+
+```bash
+npm run verify:mvp1
+```
+
+This builds the packages, runs browser creator-loop coverage, and exports the MVP1 fixture.
+
 ## Core Test Loops
 
 ### MVP Loop: Ordinary VN Dialogue To Local Export
@@ -40,6 +66,7 @@ Pass evidence:
 - Empty unfocused text items do not render repeated placeholder body copy, and Group markers stay low-noise metadata rather than primary row labels.
 - Clicking text and structural items updates only Studio editor state until a creator action commits a Document command. Empty or between-Group insertion can be tested as internal editor state, but the normal Writing flow must not require persistent insertion buttons.
 - `Cmd/Ctrl+K` add/search can add or change MVP content from the current insertion target without interpreting prose as commands.
+- Studio Preview shows the current Group's authored text, inherited stage/background label, source trace, and local `Next` / `Restart` controls without mutating the Document.
 - Preview advances according to click progression rules.
 - Exported local package matches Preview for order, display mode, and Group progression.
 - Selection sync does not create Document mutations.

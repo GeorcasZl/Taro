@@ -24,6 +24,13 @@ import {
   isPrimaryK,
   isSameGroupEnter
 } from "./keyboard.js";
+import {
+  buildPreviewPlayerView,
+  createPreviewPlaybackState,
+  getNextPreviewGroupId,
+  getRestartPreviewGroupId,
+  type PreviewPlaybackState
+} from "./previewPlayer.js";
 
 type ExportState = ReturnType<typeof buildStudioExport>;
 
@@ -43,17 +50,20 @@ export function App() {
   const [addSearchOpen, setAddSearchOpen] = useState(false);
   const [exported, setExported] = useState<ExportState | null>(null);
   const [focusedTextItemId, setFocusedTextItemId] = useState<string | null>(null);
+  const [previewPlayback, setPreviewPlayback] = useState<PreviewPlaybackState>(() =>
+    createPreviewPlaybackState(getSelectedGroup(createInitialStudioState())?.id ?? null)
+  );
   const textEditorRefs = useRef(new Map<string, HTMLTextAreaElement>());
   const preview = useMemo(
     () => previewDocument(state.document, { mode: "full_preview" }),
     [state.document]
   );
-  const previewEventTypes = useMemo(
-    () => Array.from(new Set(preview.events.map((event) => event.type))),
-    [preview.events]
-  );
   const displayGroups = useMemo(() => buildDisplayGroups(state), [state]);
   const selectedGroup = getSelectedGroup(state);
+  const previewPlayerView = useMemo(
+    () => buildPreviewPlayerView(state.document, previewPlayback),
+    [state.document, previewPlayback]
+  );
   const exportTraceMatches =
     exported?.ok === true &&
     JSON.stringify(preview.events) === JSON.stringify(exported.runtime_manifest.preview_trace);
@@ -69,6 +79,10 @@ export function App() {
     window.addEventListener("keydown", onWindowKeyDown);
     return () => window.removeEventListener("keydown", onWindowKeyDown);
   }, []);
+
+  useEffect(() => {
+    setPreviewPlayback(createPreviewPlaybackState(selectedGroup?.id ?? null));
+  }, [selectedGroup?.id]);
 
   useEffect(() => {
     if (state.insertionTarget?.kind !== "text_caret") {
@@ -297,11 +311,56 @@ export function App() {
 
       <section className="preview-panel" aria-label="Preview">
         <h2>Preview</h2>
-        <ul className="event-list">
-          {previewEventTypes.map((type) => (
-            <li key={type}>{type}</li>
-          ))}
-        </ul>
+        {previewPlayerView.isEnd ? (
+          <p>End of preview.</p>
+        ) : (
+          <div className="preview-player">
+            <div className="preview-stage">
+              {previewPlayerView.textItems.length > 0 ? (
+                previewPlayerView.textItems.map((item) => <p key={item.itemId}>{item.text}</p>)
+              ) : (
+                <p>No text in this Group.</p>
+              )}
+            </div>
+            <p>Background: {previewPlayerView.backgroundLabel}</p>
+            <div className="preview-trace">
+              <p>Current Group: {previewPlayerView.currentGroupId}</p>
+              <p>Current Position: {previewPlayerView.positionId}</p>
+              <p>Items: {previewPlayerView.trace.item_ids.join(", ") || "None"}</p>
+              <p>
+                Stage source:{" "}
+                {previewPlayerView.trace.stage_source
+                  ? `${previewPlayerView.trace.stage_source.group_id} / ${previewPlayerView.trace.stage_source.item_id}`
+                  : "None"}
+              </p>
+            </div>
+            <div className="preview-controls">
+              <button
+                type="button"
+                disabled={!previewPlayerView.canAdvance}
+                onClick={() => {
+                  setPreviewPlayback((current) => ({
+                    ...current,
+                    currentGroupId: getNextPreviewGroupId(state.document, current.currentGroupId)
+                  }));
+                }}
+              >
+                Preview Next
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewPlayback((current) => ({
+                    ...current,
+                    currentGroupId: getRestartPreviewGroupId(current)
+                  }));
+                }}
+              >
+                Preview Restart
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="export-panel" aria-label="Export">

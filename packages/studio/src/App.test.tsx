@@ -197,7 +197,7 @@ describe("MVP1.1 Studio document-like writing loop", () => {
     const group = within(screen.getByRole("list", { name: "Groups" })).getByRole("listitem");
     expect(group).toHaveTextContent("A");
     expect(group).toHaveTextContent("Stage change: Rainy street background");
-    expect(screen.getByText("Background: Rainy street")).toBeInTheDocument();
+    expect(screen.getAllByText("Background: Rainy street")).toHaveLength(2);
   });
 
   test("repeating the same background action creates another visible stage_change item", async () => {
@@ -225,13 +225,58 @@ describe("MVP1.1 Studio document-like writing loop", () => {
     await user.keyboard("{Enter}");
     await user.type(screen.getByRole("textbox", { name: "Text item in Group 2" }), "Ren: Quiet never lasts here.");
 
-    expect(screen.getByText("preview.started")).toBeInTheDocument();
-    expect(screen.getByText("group.completed")).toBeInTheDocument();
+    const preview = screen.getByRole("region", { name: "Preview" });
+    expect(within(preview).getByText("Ren: Quiet never lasts here.")).toBeInTheDocument();
+    expect(within(preview).getByText("Current Group: group_2")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Export local package" }));
 
     expect(screen.getByText("Export ready")).toBeInTheDocument();
     expect(screen.getByText("taro.local-playable.v0")).toBeInTheDocument();
+    expect(screen.getByText("Preview/export trace matched")).toBeInTheDocument();
+  });
+
+  test("Preview shows current Group text, inherited background, and source trace", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const firstText = screen.getByRole("textbox", { name: "Text item in Group 1" });
+    await user.type(firstText, "A");
+    await user.keyboard("{Meta>}k{/Meta}");
+    await user.click(screen.getByRole("button", { name: "Set rainy street background" }));
+    await user.click(firstText);
+    await user.keyboard("{Enter}");
+    await user.type(screen.getByRole("textbox", { name: "Text item in Group 2" }), "B");
+    await user.click(firstText);
+
+    const preview = screen.getByRole("region", { name: "Preview" });
+    expect(within(preview).getByText("A")).toBeInTheDocument();
+    expect(within(preview).getByText("Background: Rainy street")).toBeInTheDocument();
+    expect(within(preview).getByText("Current Group: group_1")).toBeInTheDocument();
+    expect(within(preview).getByText(/item_1/)).toBeInTheDocument();
+    expect(within(preview).getByText(/Stage source:/)).toBeInTheDocument();
+  });
+
+  test("Preview Next and Restart use local state without changing export parity", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const firstText = screen.getByRole("textbox", { name: "Text item in Group 1" });
+    await user.type(firstText, "A");
+    await user.keyboard("{Enter}");
+    await user.type(screen.getByRole("textbox", { name: "Text item in Group 2" }), "B");
+    await user.click(firstText);
+
+    const preview = screen.getByRole("region", { name: "Preview" });
+    expect(within(preview).getByText("A")).toBeInTheDocument();
+
+    await user.click(within(preview).getByRole("button", { name: "Preview Next" }));
+    expect(within(preview).getByText("B")).toBeInTheDocument();
+
+    await user.click(within(preview).getByRole("button", { name: "Preview Restart" }));
+    expect(within(preview).getByText("A")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Export local package" }));
     expect(screen.getByText("Preview/export trace matched")).toBeInTheDocument();
   });
 });

@@ -2,6 +2,17 @@
 
 All notable changes to Taro will be documented in this file.
 
+## 2026-05-29
+
+### Added
+
+- Added explicit `check:fast`, `check:full`, and `verify:mvp1` verification tiers for daily development, milestone handoff, and MVP1 creator-loop parity.
+- Added a minimal Studio Preview player surface with current-Group text, inherited stage label, local playback controls, and source trace.
+
+### Changed
+
+- Documented when to use each verification tier in the README and testing strategy.
+
 ## 2026-05-28
 
 ### Added

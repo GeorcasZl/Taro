@@ -10,6 +10,8 @@
     "build": "npm run build --workspace @taro/core && npm run build --workspace @taro/studio",
     "build:studio": "npm run build --workspace @taro/studio",
     "check": "npm run docs:check && npm run typecheck && npm run build && npm test",
+    "check:fast": "npm run docs:check && npm run typecheck && npm test",
+    "check:full": "npm run check && npm run test:browser && npm run export:mvp1",
     "dev": "npm run dev --workspace @taro/studio",
     "docs:check": "bash scripts/check-docs.sh",
     "export:mvp1": "npm run build && node scripts/export-mvp1-fixture.mjs",
@@ -17,6 +19,7 @@
     "test:browser": "playwright test",
     "test:studio": "npm run test --workspace @taro/studio",
     "typecheck": "npm run typecheck --workspace @taro/core && npm run typecheck --workspace @taro/studio",
+    "verify:mvp1": "npm run build && npm run test:browser && node scripts/export-mvp1-fixture.mjs",
     "typecheck:studio": "npm run typecheck --workspace @taro/studio"
   },
   "devDependencies": {

@@ -42,8 +42,22 @@ Design and implementation guidance:
 
 This repository contains the product-document baseline, the executable MVP1 core scaffold, and the first ordinary-dialogue Studio vertical slice. The implementation proves the source-of-truth Document core plus a browser-visible Writing, Canvas, Preview, and Export loop:
 
+For daily development, use the fast gate:
+
 ```bash
-npm run check
+npm run check:fast
+```
+
+For milestone handoff, use the full gate:
+
+```bash
+npm run check:full
+```
+
+For the MVP1 creator loop specifically, use:
+
+```bash
+npm run verify:mvp1
 ```
 
 ## Run MVP1 Locally
