@@ -17,13 +17,13 @@ When these files conflict, prefer the higher file in the list and update the low
 
 ## Core Product Rules
 
-- Writing is the source of truth.
-- Canvas is a visual editor and diagnostic surface, not a second hidden object system.
-- A Group is the stable internal unit for one player advance.
+- Document is the single source of truth.
+- A Group is a narrative step with configurable end conditions (click, trigger, auto).
+- Unified editing interface: No separate Writing/Canvas surfaces; all views edit the same Document.
 - Stage state is derived from `position + path context`, not from a global scene object.
 - Choices, conditions, jumps, record writes, and critical state changes must be visible, searchable, and editable.
-- Plugins may declare triggers and recommended actions, but inserted flow control must expand into visible Taro bindings.
 - Templates are generators by default. Generated structure becomes ordinary editable story structure.
+- Components declare events, not hide flow. Custom components must expand their flow control into visible Taro event bindings.
 - Do not introduce slash-command-first, node-editor-first, timeline-first, or SDK-first authoring as the primary model.
 
 ## Repository Workflow

@@ -1,221 +1,108 @@
-# Taro Product Description
+# Taro 产品定义
 
-Last updated: 2026-05-17
+## 一句话产品
 
-## One-Sentence Product
+Taro 是一个分支叙事创作工具——创作者在统一的编辑界面中编写故事、编排视觉、设计交互，引擎将作品导出为可分发的桌面应用。
 
-Taro is a 2D branching narrative creation studio where creators write story text as the primary flow, then shape structure, stage presentation, interaction, plugins, preview, diagnostics, and export around that same flow.
+## 产品理念
 
-## Product Thesis
+在分支叙事创作工具领域，存在两条主流路线：
+1. **节点连线式编辑器**（如 Twine、大多数可视化引擎）：长于全局结构，但在节点内部编写长文本体验割裂，叙事流转往往被打碎在各个节点中。
+2. **纯代码/标记语言**（如 Ren'Py、Inkle）：长于纯文本的连贯写作，但缺乏所见即所得的视觉编排，对非程序员不友好。
 
-Branching narrative tools often force creators into one of two uncomfortable models:
+Taro 走的是第三条路：**以 Document 为单一数据源，多视图协同编辑，事件驱动执行。**
+我们相信写作是叙事的核心，但不应该是唯一的形态。创作者应该能在剧本流中顺畅写作，同时在舞台画布上直观调整视觉，在时间线上精细控制时序。所有这些操作都汇聚到同一个结构化的 Document 中。
 
-- A plain script that cannot express rich state, interaction, visual presentation, and export reliably.
-- A graph, timeline, scene database, or engine SDK that makes the creator manage production machinery before the story feels alive.
+## 目标创作者
 
-Taro takes a third path. The creator writes in a readable story flow. Taro preserves that flow as the main source while making structure, state, stage presentation, and interactions visible enough to edit, debug, preview, and export.
+独立创作者和小团队。覆盖从视觉小说（VN）到 RPG 场景、漫画面板、聊天小说等多种分支叙事形态。视觉小说是 Taro 的默认模式，其他形态通过组件系统（Component）作为同级的表现模式无缝集成。
 
-## Target Creator
+## 产品承诺
 
-Taro serves creators who:
+1. **统一创作体验**：创作者在一个画面内完成写作、视觉、时序和结构的编排，不再在隔离的面板间来回切换。
+2. **所见即所得**：创作者在编辑界面的看到的状态，就是玩家最终看到的运行状态。
+3. **结构总是清晰**：无论分支多么复杂，可缩放的结构树和流程图都能让创作者随时掌握全局。
+4. **渐进式复杂度**：通过语法糖，写一段普通对话像用 Word 一样简单；通过事件绑定，实现一个复杂的 RPG 机关也毫不受限。
+5. **高度可扩展**：通过基于 Web 技术的组件系统，高级用户可以定制全新的表现模式和交互逻辑，并与社区分享。
+6. **协作潜力**：基于不可变命令（Command）和明确数据源（Document）的架构，为未来的多人协作打下坚实基础。
 
-- Write branching visual stories, romance games, investigation games, interactive comics, chat fiction, and lightweight visual novels.
-- Think primarily in story, choices, consequences, pacing, and scene presentation.
-- Need visual staging and plugin-powered interactions without becoming engine programmers.
-- Need exports that behave predictably across preview, build, and player runtime.
+## 硬性原则
 
-Taro does not optimize for:
+1. **Document 是唯一数据源（Document is the single source of truth）**
+   没有任何单一表面拥有专属的数据。剧本流、舞台画布、时间线只是同一个数据模型的不同视图。所有修改都必须通过 Document Command 执行。
 
-- Professional game teams building fully custom engine logic.
-- Freeform graph-only interactive systems.
-- Timeline-heavy animation production.
-- Code-first plugin authors as the primary user.
+2. **Group 是叙事步骤（Group is the narrative step）**
+   Group 是故事推进的原子单位。它的结束条件是可配置的（点击推进、条件触发推进或自动推进），从而支持从阅读对话到场景探索的各种交互。
 
-## Product Promise
+3. **统一编辑界面（Unified editing interface）**
+   消除 Writing、Canvas、Inspector 等独立页面的概念。所有的编辑都在一个上下文协同互通的界面中进行。
 
-Taro should let a creator:
+4. **舞台状态由路径驱动（Stage state is path-driven）**
+   没有一个全局隐蔽的“场景状态”对象。舞台在任意节点的状态，完全由从故事起点到当前位置的“路径上下文（Path Context）”推演得出。
 
-1. Write a story flow naturally.
-2. Add choices, conditions, records, jumps, waits, effects, and stage changes without losing readability.
-3. Understand which content appears together when the player advances.
-4. Inspect the branch structure without turning the story into a free node graph.
-5. Preview any position with the correct path context.
-6. Diagnose missing resources, broken jumps, unresolved branch-state differences, and plugin issues.
-7. Use plugins and templates while keeping critical story logic visible.
-8. Export a playable work whose runtime behavior matches Preview.
+5. **关键逻辑必须可见可搜索可编辑（Logic stays visible）**
+   选择、条件分支、跳转、状态读写等控制故事走向的关键节点，必须在界面上显式存在，不可隐藏在纯黑盒组件中。
 
-## Current MVP
+6. **模板默认展开为普通结构（Templates are generators by default）**
+   当应用一个复杂结构模板（如“探索房间”）时，它会生成普通的、创作者可随意编辑的 Group 和事件绑定。我们不强制维持“模板实例”的神奇状态。
 
-The current MVP is an ordinary-dialogue technical vertical slice:
+7. **组件声明事件而不隐藏流程（Components declare events, not hide flow）**
+   自定义组件可以封装复杂的渲染逻辑，但涉及故事推进的流程控制，组件必须声明事件接口（Inputs/Outputs），并将流程控制展开为可见的 Taro 事件绑定。
 
-1. Writing authors dialogue as structured Groups.
-2. Canvas performs minimal visual editing for the current Group and writes changes back to the Document.
-3. Preview plays the same Group semantics that Export uses.
-4. Export produces a minimal local playable package.
+## 核心概念
 
-MVP1 proves the source-of-truth path for this narrow loop. MVP1.1 moves the Studio Writing surface away from the earlier fixed input box toward a document-like surface where creators edit and insert directly in the story body. The current Add/Search subset remains narrow, but its insertion location follows the active caret or selection rather than a separate location-specific result.
+### Document（文档）
+Taro 的核心数据结构，持久化存储的所有内容。包含故事流、资源引用、分组结构、以及所有记录和事件绑定。
 
-Plugins, templates, investigation rooms, phone chat, marketplace flows, save/load UI, Auto Mode, and player rollback are captured future directions, not MVP requirements. See `docs/MVP.md`.
+### Group（叙事步骤）
+内容组织的原子单元。它包裹了一组内容表现和内部动作，并通过结束条件（advance_mode）控制何时进入下一个步骤。
 
-## Hard Principles
+### 事件模型（trigger/response）
+Taro 底层的执行引擎机制。**触发器（Trigger）** 监听特定的游戏内动作或条件，**响应（Response）** 执行实际的状态变更或表现逻辑。普通的“对话”在底层会被展开为一组标准的“进入时显示文本”的事件绑定。
 
-### 1. Writing Is The Source Of Truth
+### 组件（Component）
+负责扩展表现形态的自定义模块包。由 HTML/CSS/JS 和事件声明组成。它接收 Taro 的状态，渲染自定义界面，并向 Taro 发出事件以推动叙事。
 
-The story flow in Writing is the primary authoring surface and source of truth.
+### 记录（Record）
+用于追踪故事状态的结构化数据字典。支持基础类型（布尔、数字、文本）和复合类型（对象、数组），以应对诸如背包、关系网等复杂状态管理。
 
-Canvas, Preview, Inspector, plugins, templates, diagnostics, and export all read from and write back to the same structured story flow. Any edit that affects player experience, branching, state, or stage presentation must be traceable to a visible story item, parameter, relation, or action binding.
+### 舞台状态（Stage State）
+特定故事节点下，所有视觉与听觉元素的即时状态快照（角色是谁、站在哪里、什么表情、放着什么 BGM 等）。
 
-### 2. Group Is The Player Advance Unit
+### 路径上下文（Path Context）
+从故事开头走到当前位置的一组选择和事件历史。因为分支叙事可能导致同一个 Group 有多种不同的到达路径，路径上下文决定了该 Group 被执行时的准确起始状态。
 
-A **Group** is the content executed or presented after one player advance.
+### 分组（Folder）
+像文件目录一样的纯组织单元。用于帮助创作者整理庞大的剧本（如分为章节、地点）。**分组没有执行语义**，不直接影响引擎执行。
 
-A Group may contain:
+### 位置（Position）
+故事流中两个项目之间的确定性缝隙。插入新内容、删除内容、或者进行合并差异处理时，位置是绝对的参考坐标。
 
-- Text lines
-- Stage changes
-- Sound changes
-- Instant effects
-- Waits
-- Interaction capabilities
-- Record writes
-- Result actions
+### 显示模式（Display Mode）
+预定义或由组件提供的内容展示样式。例如：气泡对话框、底部 ADV 文本框、手机聊天气泡等。显示模式决定了文本该如何揭示，以及默认的视觉表现。
 
-Creator-facing language should stay light: "Group", "same Group", "next Group", "split this Group", "merge as one Group". Avoid "Beat", "Moment", "Clip", "Action", or "Scene" as the primary unit.
+## 产品表面
 
-### 3. Canvas Is Not A Second Source
+### 统一编辑界面
+MVP 阶段采用固定的协同布局（远期支持灵活面板）。主要区域包括：
+- **剧本流**：以可缩放结构树的形式展示叙事，支持从鸟瞰结构到精细文本的平滑过渡。
+- **舞台画布**：直接可视化地排布角色、热点与舞台效果。操作结果直接转化为 Document 命令。
+- **动作时间线**：展示当前 Group 内部所有事件和动作发生的相对时序，并允许展开详情编辑。
+- **工具栏**：全局快速输入（Cmd/Ctrl+K），添加各种叙事元素。
+- **素材库**：集中管理所有的美术、音乐及预设资源。
+- **流程图视图**：作为 Document 数据的派生视图，提供纯粹的逻辑网络全貌。
 
-Canvas can show structure, stage, path context, preview, and diagnostics. It may also create or adjust choices, conditions, jumps, interaction-result bindings, and presentation parameters.
+### 导出
+- **桌面应用**：通过 Electron/Tauri 打包，生成独立可运行的 Windows/Mac 应用，引擎与素材打包一体。
 
-Every meaningful Canvas edit must map back to the story flow. Canvas must never create hidden flow objects, private graph edges, or stage state that cannot be found from Writing.
+## 非目标
 
-### 4. Stage State Is Path-Driven
+1. Taro 不是通用的 3D 游戏引擎。
+2. Taro 目前不支持直接导出 Web 端或移动应用（远期目标）。
+3. Taro 不是一个基于代码编辑器的 SDK，我们强制使用可视化界面的协同操作。
+4. Taro 目前不是一款实时多人协作工具。
 
-Stage state is derived from the path that reaches a story position.
+## 首批产品验证
 
-At a branch merge, two paths may imply different backgrounds, BGM, character positions, overlays, or tones. Taro should detect those differences and ask the creator to resolve them by setting a unified state, accepting path differences, or splitting later flow.
-
-### 5. Logic Must Stay Visible
-
-Choices, conditions, jumps, record writes, and critical state changes must remain visible, searchable, editable, and diagnosable.
-
-Plugins may help generate or recommend flow control. They must not hide the work's main branching and state logic inside code.
-
-### 6. Templates Generate Ordinary Structure
-
-Taro templates are generators by default.
-
-After insertion, a template expands into ordinary editable story structure: choices, conditions, jumps, records, display modes, interactions, effects, and bindings. Taro does not preserve a default long-lived template instance relationship. Plugin authors may provide instance-like experiences, but they must still expose generated critical logic.
-
-## Core Concepts
-
-### Story Flow
-
-The ordered, structured body of the work. It contains Groups, content items, positions, relations, records, and bindings.
-
-### Position
-
-A stable location in the story flow. Jumps and diagnostics refer to stable positions, not line numbers. Line numbers are editor aids only.
-
-### Group
-
-The player advance unit. One advance executes or presents one Group.
-
-### Content Item
-
-An item inside a Group. Examples include text, stage change, sound change, wait, instant effect, interaction capability, record write, and result action.
-
-### Display Mode
-
-How content appears on stage: dialogue bubble, narration panel, phone chat, centered black-screen text, background hotspot overlay, and similar presentation choices.
-
-Display mode is not only visual styling. It may define layout, entry and exit behavior, text reveal behavior, click-to-advance behavior, treatment of older content, and how multiple same-Group items appear together.
-
-### Interaction Capability
-
-How the player provides input: click, long press, drag, inspect hotspot, choose reply, select option.
-
-### Result Action
-
-What happens after an interaction or condition produces a result: continue, jump, record, change state, play effect, wait.
-
-### Record
-
-The creator-facing model for story state: flags, variables, inventory, relationship values, route progress, viewed status, and other values used by conditions and branches.
-
-### Stage State
-
-Persistent player-facing presentation state: background, character sprites, positions, expressions, BGM, ambience, overlays, tone, and ongoing visual context.
-
-### Temporary Play State
-
-Runtime-only state such as hover, focus, timer remainder, drag state, and input state. It only affects story logic when explicitly recorded.
-
-### Path Context
-
-The selected route through prior branches used to render and preview a story position.
-
-## Product Surfaces
-
-### Writing
-
-The main authoring surface. Creators write text, group content, insert records and logic, and keep the story readable.
-
-### Canvas
-
-The visual structure, stage, and path-aware editing surface. It supports zooming from overall flow to a specific Group and can edit presentation or visible logic while writing back to the story flow.
-
-### Inspector
-
-The contextual parameter surface. It edits the selected Group, content item, display mode, interaction, action binding, record, condition, plugin capability, or resource.
-
-### Preview
-
-The playable simulation surface. It can run a Group, run from a position, run along a path, or run from the beginning. It shows state, diagnostics, interaction results, and links back to the editable source.
-
-Preview shares Player Runtime semantics with Export. It may show editor-only overlays, traces, and controls, but it must not invent behavior that exported works cannot reproduce.
-
-### Library
-
-The asset and resource surface for images, audio, fonts, effects, display modes, templates, plugins, and reusable project content.
-
-### Records
-
-The story state management surface for flags, variables, inventory, route progress, relationship values, and viewed-status records.
-
-### Plugins
-
-The extension surface for installed capabilities, manifests, permissions, diagnostics, missing plugin handling, and migration.
-
-### Export
-
-The packaging surface that turns the project into a playable runtime and validates parity with Preview.
-
-## Non-Goals
-
-Taro is not:
-
-- A general-purpose 2D game engine.
-- A PixiJS or SDK teaching environment for ordinary creators.
-- A graph-first visual programming tool.
-- A timeline-first animation tool.
-- A screenplay formatter.
-- A plugin marketplace where plugins can own the hidden narrative flow.
-- A scene database where scenes are the primary writing unit.
-
-The MVP is also not:
-
-- A full plugin platform.
-- A marketplace or publishing system.
-- A save/load product surface.
-- A player Auto Mode or rollback implementation.
-- A complete phone chat or investigation-template authoring system.
-
-## First Product Proofs
-
-The first product proofs are five creator loops. The MVP proves the first loop plus the smallest supporting Canvas, Preview, and local Export behavior. The remaining loops are alpha or later proof loops.
-
-1. Ordinary dialogue: write two lines, inherit speaker and display mode, preview two advances.
-2. Multi-content Group: add thunder, shake, two bubbles, order them, preview execution.
-3. Investigate room: insert hotspot template, bind three hotspots to records and jumps, continue after all viewed.
-4. Branch merge: create divergent stage states, merge, detect and resolve stage-state difference.
-5. Plugin phone chat: install chat capability, insert messages and replies, bind records and jumps, preview and export.
+在 MVP 阶段，Taro 必须能够证明以下最小核心循环：
+创作者能够在一个融合了剧本流和舞台画布的统一界面中，顺畅地写出带有一两个视觉变化的简单分支对话场景，在时间线上直观调整延时，通过事件驱动的引擎进行连贯预览，并成功打包导出一个可运行的桌面执行文件。

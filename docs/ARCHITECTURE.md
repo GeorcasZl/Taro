@@ -1,212 +1,130 @@
-# Taro Architecture
+# Taro 系统架构
 
-Last updated: 2026-05-15
+## 架构目标
 
-## Architecture Goal
+Taro 的架构目标是实现：**以 Document 为单一数据源，多视图协同编辑，事件驱动执行。**
+通过明确的数据流和边界，保证复杂的叙事逻辑在编辑器中可读可控，同时在运行时具备极高的扩展性。
 
-Taro's architecture must preserve a readable story flow while supporting visual editing, path-aware preview, plugin capabilities, diagnostics, and export.
-
-The central architectural rule is simple:
-
-> One structured Document owns the work. Every surface edits or derives from that Document.
-
-## System Overview
+## 系统总览
 
 ```mermaid
-flowchart LR
-  Writing["Writing\nprimary story authoring"] --> Core["Document Core\nstructured story model"]
-  Canvas["Canvas\nstructure + stage view"] --> Core
-  Inspector["Inspector\ncontextual parameters"] --> Core
-  Library["Library\nassets + plugins + templates"] --> Core
-  Core --> Preview["Preview Engine\npath-aware simulation"]
-  Core --> Diagnostics["Diagnostics\nissues + tracebacks"]
-  Core --> Exporter["Exporter\nplayable runtime package"]
-  Search["Add/Search\ncontextual insertion"] --> Core
-  Plugins["Plugin Host\ncapabilities + manifests"] --> Core
-  Plugins --> Preview
-  Diagnostics --> Writing
-  Diagnostics --> Canvas
-  Preview --> Writing
-  Preview --> Canvas
+graph TD
+    %% 创作层
+    subgraph Studio[创作层 Studio]
+        Flow[剧本流]
+        Canvas[舞台画布]
+        Timeline[动作时间线]
+        Library[素材库]
+    end
+
+    %% 数据流向下
+    Studio -- Document Command --> DocCore
+
+    %% 数据层
+    subgraph DocumentLayer[数据层 Document]
+        DocCore((Document\n单一数据源))
+        Groups[Groups\n(叙事步骤)]
+        Events[事件绑定\n(Trigger/Response)]
+        Records[结构化记录]
+        Resources[资源引用]
+        
+        DocCore --- Groups
+        DocCore --- Events
+        DocCore --- Records
+        DocCore --- Resources
+    end
+
+    %% 派生视图向上
+    DocCore -. 派生更新 .-> Flow
+    DocCore -. 派生更新 .-> Canvas
+    DocCore -. 派生更新 .-> Timeline
+
+    %% 运行时与组件向下
+    DocCore -- 事件调度 --> Runtime
+
+    %% 引擎层
+    subgraph Engine[引擎层 Runtime]
+        EventBus[事件总线]
+        TriggerMatch[触发器匹配]
+        StateMgr[状态管理 / 条件求值]
+        
+        EventBus --- TriggerMatch
+        EventBus --- StateMgr
+    end
+
+    %% 组件层
+    Engine -- 事件接口 --> Components
+
+    subgraph ComponentsLayer[组件层 Components]
+        Builtin[内置组件\n对话框/选项等]
+        Custom[自定义组件\nRPG场景/漫画等]
+    end
+
+    %% 反馈循环
+    ComponentsLayer -. 触发事件 .-> Engine
 ```
 
-## Primary Modules
+## 四层架构
 
-### Document Core
+### 1. 创作层（Studio）
+即统一编辑界面。剧本流、舞台画布、时间线、素材库等区域**本身不存储任何故事逻辑**。它们完全是 Document 的视图（Views）和控制器（Controllers）。创作者在这些表面上的所有交互（如拖拽角色、修改文本、调整时序）最终都转化为统一的 **Document Command** 发送给下层。
 
-Owns the structured work:
+### 2. 数据层（Document）
+系统的唯一持久化数据源（Single Source of Truth）。它存储了项目的所有实际数据：
+- **Groups（叙事步骤）**：内容组织单元及其结束条件（advance_mode）。
+- **事件绑定（Event Bindings）**：Trigger 与 Response 的映射表。
+- **结构化记录（Records）**：用于追踪故事状态的变量定义。
+- **资源引用（Resources）**：图片、音频等外部素材的引用。
+- **分组结构（Folder Tree）**：纯组织性质的目录树。
 
-- Project metadata
-- Story flow
-- Groups
-- Content items
-- Positions and references
-- Records
-- Conditions
-- Stage changes
-- Display modes
-- Interactions
-- Result actions
-- Plugin capability instances
-- Resource references
+### 3. 引擎层（Runtime）
+处理游戏执行逻辑的核心。它监听和匹配**触发器（Trigger）**，执行相应的**响应（Response）**。它维护当前的故事进度、路径上下文、记录的当前值，并负责条件表达式的求值。当创作者在 Studio 中“预览”时，或者玩家运行最终导出的游戏时，执行的都是这一层逻辑。
 
-Document Core is the only module allowed to commit persistent project changes.
+### 4. 组件层（Components）
+负责最终的视觉渲染和交互扩展。每个组件由 HTML/CSS/JS 和一个事件声明（Manifest）组成。
+- 组件通过监听引擎层派发的事件来更新自身（例如：听到 `show_text` 事件后打字机显示文字）。
+- 组件通过向引擎层发送事件来推进流程（例如：玩家点击按钮后，向引擎发送 `click` 事件）。
 
-### Writing Surface
+## 数据源边界
 
-Writing presents the story flow as the primary creative surface.
+Taro 严格区分以下三种状态边界：
 
-Responsibilities:
+1. **持久化数据源（Persistent Source）**
+   只有 `Document` 属于这一类。所有会被保存到磁盘的项目数据都在这里。它只接受 Command 修改，不接受直接的状态赋值。
 
-- Insert, edit, split, merge, reorder, and delete Groups.
-- Edit text and visible content items.
-- Insert choices, conditions, records, jumps, waits, effects, and stage changes.
-- Invoke a global add/search box that turns explicit creator choices into Document commands.
-- Keep prose safe from accidental command interpretation.
-- Maintain local selection and editing state without becoming the model owner.
+2. **派生视图（Derived Views）**
+   这些状态可以通过计算 `Document` 得出，不需持久化存储：
+   - 当前位置的**舞台状态（Stage State）**
+   - 包含分支结构的**流程图（Flowchart）**
+   - **时间线（Timeline）** 的渲染序列
 
-### Canvas Surface
+3. **本地 UI 状态（Local UI State）**
+   与项目内容无关的纯编辑器状态，例如：当前选中的 Group、光标在剧本流中的位置、舞台画布的缩放级别。这些状态不触及 `Document`，仅在前端内存中维护。
 
-Canvas presents the Document visually.
+## 数据流
 
-Responsibilities:
+当创作者在界面上进行编辑时，系统遵循单向数据流：
 
-- Show structure at broad zoom.
-- Show path context and current route.
-- Show the current Group and stage at close zoom.
-- Edit stage objects and interaction regions when those edits map back to Document items.
-- Diagnose multi-path stage differences.
-- Navigate back to Writing positions.
+1. **用户操作**：创作者在舞台上拖拽一个角色。
+2. **生成命令**：画布组件将操作转换为 `Document Command`（如 `stage.move_character`）。
+3. **命令校验**：Document 核心验证命令合法性（例如：引用的角色是否存在）。
+4. **应用补丁**：Document 状态更新，产生一次不可变的变更（Patch）。
+5. **派生更新**：Document 发出状态更新通知，舞台画布、剧本流、时间线等所有派生视图重新计算并渲染最新状态。
+6. **诊断检查**：后台诊断器运行，检查修改是否引发了新的错误（如：破坏了下游分支的逻辑），更新 UI 提示。
 
-Canvas must not persist hidden graph-only objects.
+## 架构不变量
 
-### Inspector
+1. **绝对单一数据源**：只有 Document Core 有权限（也只通过特定的持久化机制）读写项目磁盘文件。其他任何模块（包括 Canvas、组件）不可以直接存储数据。
+2. **事件流转的强制可见性**：自定义组件不能隐蔽地阻断或改变故事主干流转。所有推动故事前进的操作必须转换为 Taro 的公开事件（例如不能在组件内部私自写死一个隐藏的分支跳转逻辑而不暴露为 Taro 事件绑定）。
+3. **一致的运行时代价**：由于引擎层和组件层完全解耦，Studio 中的“实时预览”和最终导出的“玩家版本”使用的是完全相同的 Runtime 与 Component 组合，确保所见即所得。
 
-Inspector edits parameters for the current selection.
+## 错误策略
 
-Responsibilities:
+- **用户侧防错**：通过命令合法性校验（Command Validation），非法操作（如删除不存在的 Group）会被直接拦截，不会污染 Document 状态。
+- **渐进式诊断**：不阻止创作者的“草稿式”修改。如果修改导致引用断裂（如删除了某个角色，但后续剧情还在使用），这会产生一个非阻塞的**诊断警告（Diagnostic Warning）**，而不是抛出系统崩溃异常。
+- **快照回滚**：由于所有的修改都基于不可变的命令和补丁（Patch），发生系统级异常时，可以安全地回滚到上一个稳定的 Document 快照。
 
-- Show parameter source: project default, display-mode default, plugin default, or local value.
-- Edit selected content, Group, action, condition, record, resource, or plugin capability.
-- Avoid becoming a disconnected form editor. Every Inspector edit needs a source item.
+## 架构非目标
 
-### Preview Engine
-
-Preview simulates the runtime from a selected context.
-
-Responsibilities:
-
-- Render a Group with path-derived stage state.
-- Run from a position with a selected path context.
-- Run along a full path from initial state.
-- Show current records and stage state.
-- Emit tracebacks for choices, conditions, jumps, missing resources, plugin errors, and action bindings.
-
-Preview state must not silently mutate the authoring Document.
-
-Preview and Export should share one Player Runtime semantics layer for Group execution, click progression, records, jumps, stage state, and display modes. Preview may add editor-only overlays and diagnostics.
-
-### Plugin Host
-
-Plugin Host loads declared capabilities.
-
-Responsibilities:
-
-- Register display modes, interactions, effects, templates, editor tools, and runtime renderers.
-- Validate plugin manifests and permissions.
-- Expose trigger results and recommended actions.
-- Require critical story-flow effects to expand into visible Taro bindings.
-- Provide missing-plugin, upgrade, migration, and export diagnostics.
-
-### Exporter
-
-Exporter packages the work into a playable runtime.
-
-Responsibilities:
-
-- Validate Document contracts.
-- Include required resources and plugin runtimes.
-- Preserve Preview behavior in runtime.
-- Report all blocking export issues with source locations.
-
-The MVP Exporter only needs to produce a minimal local playable package for the ordinary VN dialogue loop. Broader plugin packaging and distribution workflows are later scope.
-
-## Source Of Truth Boundaries
-
-### Persistent Source
-
-The persistent source is the Document.
-
-All durable edits must be represented as Document changes.
-
-### Derived Views
-
-These are derived from the Document:
-
-- Canvas graph layout
-- Canvas stage render
-- Preview state
-- Diagnostics
-- Export build graph
-- Search index
-
-Derived views can cache data, but they must be rebuildable.
-
-### Local UI State
-
-These states are local and not story truth:
-
-- Selection
-- Focus
-- Hover
-- Scroll
-- Zoom
-- Open panels
-- Temporary preview playback state
-
-Local UI state may be saved as editor preference, but it must not affect story meaning.
-
-Selection sync between Writing, Canvas, Inspector, and Preview is local UI/editor state. It should use editor events or commands, not Document mutation commands.
-
-## Data Flow
-
-1. A user action starts in Writing, Canvas, Inspector, Library, or Preview.
-2. If the action changes story truth, the surface creates an explicit Document command.
-3. If the action only changes selection, focus, zoom, panels, or Preview playback, it updates editor or Preview state.
-4. Document Core validates Document commands against product invariants.
-5. Document Core applies a patch.
-6. Derived views update from the changed Document.
-7. Diagnostics recompute affected checks.
-8. Preview and Export use the same resulting Document semantics.
-
-## Invariants
-
-- Every jump target resolves to a stable position or named structural target.
-- Every condition references defined records or plugin-declared read values.
-- Every record write uses a defined record key and compatible value.
-- Every plugin-provided trigger result is bound to visible Taro actions before it controls story flow.
-- Every Canvas structural connection maps to a choice option, condition branch, jump, or interaction result action.
-- Every stage render at a story position has a path context.
-- Every branch merge with conflicting stage state is either resolved or explicitly accepted.
-- Every export build uses the same action and state semantics as Preview.
-
-## Error Strategy
-
-Errors should be source-locatable.
-
-Each blocking issue needs:
-
-- A stable issue code.
-- Human-readable message.
-- Source position or resource reference.
-- Affected surface.
-- Suggested fix.
-- Export blocking level.
-
-## Architecture Non-Goals
-
-- Do not introduce a second graph model that can diverge from Writing.
-- Do not make plugins the owners of hidden branching logic.
-- Do not make Preview the persistence layer.
-- Do not make line numbers the durable identity system.
-- Do not require ordinary creators to understand renderer or SDK internals.
+1. **不设计为云原生多人实时协作架构（CRDT/OT）**：MVP 阶段的不可变命令设计是为了可追溯性和回滚，而非实时同步。基于 Git 等外部版本控制仍是推荐的协作方式。
+2. **不内置物理引擎或复杂的实时帧同步**：Taro 的引擎层是一个高层次的事件状态机，而不是面向每秒 60 帧的实时渲染循环。高度复杂的实时动作游戏并非其目标。

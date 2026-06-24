@@ -1,6 +1,6 @@
 # Figma Workflow
 
-Last updated: 2026-05-29
+Last updated: 2026-06-24
 
 ## Purpose
 
@@ -8,13 +8,13 @@ This document defines how Taro uses Figma during UI design work.
 
 Taro is not ready to treat Figma as a full visual-design, high-fidelity prototype, or design-system workflow.
 
-The current product risk is premature visual fixation. The Writing surface editing model, insertion behavior, Group visibility, Add/Search flow, Preview, and Export parity need to stabilize in the browser before high-fidelity UI or reusable component work becomes useful.
+The current product risk is premature visual fixation. The Unified Interface editing model (Script Flow + Stage Canvas), insertion behavior, Group visibility, Add/Search flow, Preview, and Export parity need to stabilize in the browser before high-fidelity UI or reusable component work becomes useful.
 
 For now, Figma is a very low-fi reference and discussion tool. It can help answer:
 
-- What should this editor feel like?
+- What should this unified editor feel like?
 - What should this editor avoid becoming?
-- Which coarse surface relationships make Writing feel primary?
+- Which coarse surface relationships make the Document feel like the single source of truth?
 - Which reference patterns would accidentally push Taro toward forms, node editors, timelines, dashboards, or SDK consoles?
 
 Figma references are exploratory unless a later product/design review explicitly promotes them.
@@ -28,7 +28,7 @@ Figma may currently be used for:
 - Rough reference boards.
 - Lo-fi boxes and annotations.
 - Side-by-side comparisons of "Taro-like" and "not Taro-like" editor postures.
-- Discussion artifacts for Writing, Canvas, Inspector, and Preview relationships.
+- Discussion artifacts for Script Flow, Stage Canvas, Timeline, and Preview relationships.
 - Disposable sketches that help name open interaction questions.
 
 Figma must not currently be used for:
@@ -47,13 +47,12 @@ Figma must not currently be used for:
 The repository remains authoritative for:
 
 - Product thesis and target creator.
-- Writing as source of truth.
-- Writing surface editing behavior.
-- Group execution semantics.
-- Document, Stage, Story Record, Temporary Play, and Editor state boundaries.
-- Canvas as a visual editor and diagnostic surface, not a second hidden object system.
-- Plugin and template flow-control visibility.
-- API contracts.
+- Document as the single source of truth.
+- Unified Interface editing behavior.
+- Group execution semantics (advance_mode).
+- Event-driven trigger/response execution model.
+- Path-driven stage state derivation.
+- Component API contracts and event declarations.
 - Preview and Export behavior.
 - Test and dogfood acceptance.
 
@@ -76,9 +75,9 @@ Recommended pages:
 - `04 Open Questions`
 - `90 Archive`
 
-The file should link back to this spec and to `docs/UI_DESIGN.md`.
+The file should link back to this spec and to `docs/STUDIO.md`.
 
-Do not record a low-fi exploratory file as the canonical UI source. When the project later reaches a formal Figma workflow, record that file link in `docs/UI_DESIGN.md`.
+Do not record a low-fi exploratory file as the canonical UI source. When the project later reaches a formal Figma workflow, record that file link in `docs/STUDIO.md`.
 
 ## Current Low-Fi Scope
 
@@ -87,7 +86,7 @@ The current Figma scope is discussion, not handoff.
 Allowed low-fi references:
 
 - Editor posture references.
-- Writing-primary surface sketches.
+- Unified interface layout sketches.
 - Coarse layout comparisons.
 - Negative examples that make the product boundary clear.
 - Notes about which interactions need browser proof before visual design.
@@ -112,13 +111,13 @@ Status: active.
 
 Goal:
 
-- Stabilize MVP1.1 Writing surface semantics in the running browser product.
-- Prove the minimum Writing -> Preview -> Export loop.
+- Stabilize MVP Unified Interface semantics in the running browser product.
+- Prove the minimum Script Flow -> Stage Canvas -> Preview -> Export loop.
 - Keep Figma low-fi and exploratory.
 
 Exit evidence:
 
-- Browser Writing loop supports inline editing, caret/selection insertion, Group visibility, Add/Search insertion, Preview trace, and Export parity.
+- Browser loop supports inline editing, visual canvas manipulation, Group visibility, Event binding trace, and Export parity.
 - Product docs and specs describe the accepted editing model.
 - Tests or dogfood evidence cover the loop.
 
@@ -129,7 +128,7 @@ Enter only after Gate 0 evidence exists.
 Allowed work:
 
 - Low- to medium-fidelity Studio shell exploration.
-- Coarse state exploration for Writing, Canvas, Inspector, and Preview.
+- Coarse state exploration for Script Flow, Stage Canvas, Timeline, and Preview.
 - Prototype walkthroughs for already-proven product loops.
 - Screenshot comparison against the live browser product.
 
@@ -198,7 +197,7 @@ During Gate 0, frames should normally remain `Exploratory`. Only `Accepted` and 
 
 Stable decisions from any Figma discussion must be mirrored back into repo docs before they guide implementation.
 
-Update `docs/UI_DESIGN.md` when a decision changes:
+Update `docs/STUDIO.md` when a decision changes:
 
 - Studio surface posture.
 - Visual language.
@@ -209,9 +208,9 @@ Update `docs/UI_DESIGN.md` when a decision changes:
 Update `docs/spec/*.md` when a decision changes:
 
 - A specific creator workflow.
-- Writing or Canvas behavior.
+- Script Flow or Stage Canvas behavior.
 - Preview or diagnostics behavior.
-- Plugin or template authoring behavior.
+- Component or template authoring behavior.
 
 Update `docs/API_CONTRACTS.md` when a decision requires:
 
@@ -247,7 +246,7 @@ Figma can help discuss visual direction. It cannot prove:
 - Document command correctness.
 - Group execution semantics.
 - Preview and Export parity.
-- Plugin flow-control visibility.
+- Component flow-control visibility.
 
 Those require live app tests, dogfood loops, and repo-level verification.
 
@@ -258,14 +257,14 @@ Before using a Figma artifact in the current phase:
 - It is clearly labeled low-fi and exploratory.
 - It answers a concrete editor-posture question.
 - It does not imply final UI, component tokens, or implementation acceptance.
-- It does not bypass browser proof for the Writing editing model.
+- It does not bypass browser proof for the unified editing model.
 - It identifies which product questions remain open.
 
 Before accepting a Figma frame in a later gate:
 
 - The creator workflow is visible end to end.
-- Writing remains the source of truth.
-- Canvas changes map back to visible story structure.
+- Document remains the source of truth.
+- Stage Canvas changes map back to Document Commands.
 - Group boundaries are understandable without overpowering prose.
 - Path context is visible when state depends on prior choices.
 - Diagnostics link back to editable source.

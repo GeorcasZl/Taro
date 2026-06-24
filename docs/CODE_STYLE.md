@@ -1,146 +1,26 @@
-# Taro Code Style
+# Taro 代码风格与规范
 
-Last updated: 2026-05-15
+## TypeScript 核心准则
 
-## Engineering Principles
+1. **强类型优先**：Taro 的核心数据结构（如 Document、Group、Event Binding）必须具有严格的 TypeScript 接口定义。避免在核心引擎层使用 `any` 或未声明的推导类型。
+2. **不可变数据更新**：对 `Document` 及其衍生状态的更新，必须产生一个新的只读对象。这保证了状态推演、撤销/重做机制的可靠性。
+3. **副作用隔离**：
+   - 核心引擎（Runtime/StateMgr）必须是纯函数：给定相同的 Document 和相同的输入事件序列，必须产生完全一致的派生状态。
+   - 所有副作用（DOM 渲染、文件 I/O、音频播放）必须限制在 Component 层和最外层的宿主环境中。
 
-Code should protect the product model.
+## React 组件规范
 
-Prefer:
+1. **视图即纯函数**：UI 组件（如剧本流节点、画布上的角色图片）应该是无状态或状态极小的。它们只负责接收来自 Store 的 Props 并渲染。
+2. **事件上报原则**：当用户在组件上发生交互（拖拽、输入内容）时，组件不要自己去修改底层状态，而是发出带有对应有效载荷（Payload）的事件，让外层控制器转化为 `Document Command`。
+3. **避免深层 Prop 传递**：合理使用 Context 或状态管理库，避免将全局状态一层层传递给深层 UI 组件。
 
-- Small modules with clear ownership.
-- Explicit commands for Document mutations.
-- Derived views over duplicated persistent state.
-- Stable identifiers over line-number references.
-- Structured parsers and schemas over ad hoc string parsing.
-- Tests that prove creator workflows.
+## 命名约定
 
-Avoid:
+- **接口与类型**：使用大驼峰式，不加 `I` 前缀。如 `Document`, `EventBinding`, `Group`。
+- **不可变命令**：使用动名词结构表示执行的动作，如 `CreateGroupCommand`, `MoveCharacterCommand`。
+- **事件名称**：统一使用蛇形命名法（snake_case），以匹配 JSON 序列化格式和配置体验。如 `group_enter`, `show_text`。
+- **UI 组件**：使用大驼峰式，如 `ScriptFlow`, `StageCanvas`, `ActionTimeline`。
 
-- Hidden flow logic inside UI state.
-- Plugin shortcuts that bypass visible Taro actions.
-- Canvas-only objects that cannot map to Writing.
-- Preview-only behavior that differs from Export.
-- Broad rewrites that are not needed for the task.
+## 文件组织
 
-## Naming
-
-Use product terms consistently:
-
-- `Document`
-- `StoryFlow`
-- `Group`
-- `ContentItem`
-- `Position`
-- `Record`
-- `Condition`
-- `StageState`
-- `PathContext`
-- `DisplayMode`
-- `InteractionCapability`
-- `TriggerResult`
-- `ResultAction`
-- `Diagnostic`
-
-Avoid using these as primary product model names:
-
-- `Scene`
-- `Beat`
-- `Moment`
-- `Clip`
-- `Node`
-- `Override`
-- `Profile`
-
-Those words may appear only when scoped to compatibility, rendering internals, imported formats, or plugin implementation details.
-
-## Document Mutations
-
-Persistent changes should use explicit command functions.
-
-Command names should describe product behavior:
-
-- `createGroupAfter`
-- `insertItemIntoGroup`
-- `splitGroup`
-- `mergeGroups`
-- `bindTriggerAction`
-- `deriveStageState`
-- `comparePathStageState`
-- `normalizeMergeStageState`
-
-Each command should validate:
-
-- Target existence.
-- Reference integrity.
-- Record type compatibility.
-- Plugin capability availability.
-- Document revision assumptions when collaborative or async writes exist.
-
-## Derived State
-
-Derived state should be rebuildable from the Document.
-
-Examples:
-
-- Story graph.
-- Canvas layout.
-- Stage state at position.
-- Preview trace.
-- Diagnostics.
-- Export graph.
-
-Cache derived state only when invalidation is explicit and testable.
-
-## Error Handling
-
-Errors should use stable codes and source locations.
-
-Every error that reaches creators should include:
-
-- What happened.
-- Where it happened.
-- Why it matters.
-- How to fix it.
-
-Do not expose low-level renderer, parser, or plugin stack traces as the primary message.
-
-## Tests
-
-Tests should focus on:
-
-- Document command invariants.
-- Group execution order.
-- Path-driven stage derivation.
-- Record and condition correctness.
-- Plugin trigger binding visibility.
-- Preview and Export parity.
-- Diagnostics source links.
-
-When adding a behavior, add the smallest test that would fail if the product model were violated.
-
-## Documentation Coupling
-
-If code changes one of these concepts, update the matching doc in the same change:
-
-- Group semantics: `docs/STATE_MODEL.md`, `docs/spec/group-content-execution.md`
-- Writing behavior: `docs/spec/writing-source-flow.md`
-- Canvas or path context: `docs/spec/canvas-path-preview.md`
-- Runtime click, blocking, Preview, or Export semantics: `docs/spec/runtime-semantics.md`
-- Plugin or template behavior: `docs/spec/plugins-templates.md`
-- MVP scope or deferrals: `docs/MVP.md`
-- API contracts: `docs/API_CONTRACTS.md`
-- UI surface or interaction posture: `docs/UI_DESIGN.md`
-- Major decision: `docs/adr/*.md`
-
-## Formatting
-
-Use the repository's formatter once implementation tooling exists.
-
-Until then:
-
-- Keep files focused.
-- Prefer descriptive names over comments explaining unclear names.
-- Add comments only for non-obvious product invariants or migration rules.
-- Keep generated artifacts out of hand-written source folders.
-- Keep public examples small and executable.
+- **模块内聚**：相关的逻辑应当放在一起。如果某个特性同时涉及数据结构、执行引擎和 UI，它的代码尽量收敛到该特性所属的模块文件夹中，而不是简单粗暴地按照“所有的 UI 放一个文件夹，所有的 Model 放一个文件夹”来切分。

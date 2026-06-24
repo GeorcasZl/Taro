@@ -1,78 +1,33 @@
-# Taro
+# Taro (v2)
 
-Taro is a 2D branching narrative creation studio centered on story text.
+Taro 是一款具有现代设计理念的**分支叙事创作工具**。
 
-Creators write the work in **Writing**. Taro then gives the same work a visual **Canvas**, playable **Preview**, structured **Inspector**, reusable templates, plugin capabilities, diagnostics, and export pipeline. The product is not a node editor, timeline editor, scene database, or SDK-first game engine. Its core promise is that creators can write a story as a readable flow while still authoring rich visual presentation, state, branching, and interaction.
+通过将强大的事件驱动引擎与直观的多视图协同编辑界面结合，Taro 旨在消除过去在传统写作界面与繁琐的可视化排布之间来回切换的痛点，帮助创作者在完全所见即所得的环境下完成从视觉小说（VN）到微型 RPG 场景的多种叙事作品的构建，并一键打包为桌面应用（Electron/Tauri）。
 
-## Product Position
+## 核心特色
 
-Taro is built for creators who want to make branching visual stories without turning the whole work into code or a hidden graph.
+- **统一的编辑体验**：抛弃了“剧本写作”、“画布排布”、“时间线剪辑”分别独立的旧模式。在 Taro 中，你在剧本流中写下的一句话、在画布上拖动的一个位置、在时间线上调整的零点几秒，都会即刻汇聚并作用于同一个底层数据（Document），互相同步。
+- **以事件为驱动的引擎**：底层的推进并非基于简单的点对点文本行，而是基于触发器（Trigger）和响应（Response）的事件总线。这赋予了工具极大的可扩展性，甚至可以在未来支持解密、养成、探索等进阶逻辑。
+- **明确的数据单一数据源**：只有 Document 包含真实数据。其他所有的逻辑和视图（比如角色当前处于什么表情），都能由你的剧本路径和位置被百分百确定性地回溯和推演出来。
 
-The durable product model is:
+## 架构与设计文档
 
-- **Writing is the source of truth.** All meaningful story flow, state changes, choices, conditions, jumps, interaction results, and visible stage changes must be traceable back to the story flow.
-- **A Group is the player-facing advance unit.** One player advance presents or executes one Group. A Group may contain text, stage changes, sound, effects, waits, interaction capabilities, records, and result actions.
-- **Canvas is a powerful view, not a second source.** Canvas can inspect, preview, and edit structure or presentation, but its edits must map back into the structured story flow.
-- **Stage state is path-driven.** The same story position can render differently depending on the path context that reaches it.
-- **Plugins extend expression, not hidden control.** Plugins may provide display modes, interactions, effects, templates, and recommended actions. Critical story flow remains visible and editable in Taro.
+如果您想要了解 Taro 背后的设计哲学，或者为 Taro 贡献代码，请务必阅读我们的核心文档。遵循**写作即事实**和**数据边界分明**的原则，以下文档是系统设计的最高权威：
 
-## Documentation Map
+1. [PRODUCT.md](docs/PRODUCT.md) - 产品定义与核心理念
+2. [ARCHITECTURE.md](docs/ARCHITECTURE.md) - 系统架构总览
+3. [STATE_MODEL.md](docs/STATE_MODEL.md) - 数据流转与状态推演模型
+4. [API_CONTRACTS.md](docs/API_CONTRACTS.md) - 模块间的通信与事件契约
+5. [STUDIO.md](docs/STUDIO.md) - 统一编辑器界面设计准则
+6. [MVP.md](docs/MVP.md) - MVP 阶段核心范围与目标
+7. [ROADMAP.md](docs/ROADMAP.md) - 演进路线图
 
-Start here:
+所有的具体技术规范，可在 `docs/spec/` 与 `docs/adr/` 中找到。我们在 `AGENTS.md` 中维护了团队与 AI 协作的核心规约。
 
-- [docs/PRODUCT_OVERVIEW.zh.md](docs/PRODUCT_OVERVIEW.zh.md) is a Chinese comprehensive product overview that consolidates the current direction, MVP cuts, design principles, implementation evidence, and open product questions.
-- [docs/PRODUCT.md](docs/PRODUCT.md) defines the product, creator model, hard principles, terminology, and non-goals.
-- [docs/MVP.md](docs/MVP.md) defines the current MVP cut and captures later directions that must not be lost.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) defines the conceptual system architecture and source-of-truth boundaries.
-- [docs/ROADMAP.md](docs/ROADMAP.md) defines the product path from documentation baseline to alpha proof.
-- [docs/STATE_MODEL.md](docs/STATE_MODEL.md) defines the core document, story, state, Group, path, plugin, and preview models.
-- [docs/API_CONTRACTS.md](docs/API_CONTRACTS.md) defines early contracts between editor, document core, preview, plugins, diagnostics, and export.
-- [docs/TESTING.md](docs/TESTING.md) defines the validation loops and evidence required before claiming a feature is ready.
+## 开发
 
-Design and implementation guidance:
+（待补充具体的开发启动脚本与环境依赖）
 
-- [docs/UI_DESIGN.md](docs/UI_DESIGN.md) defines the Studio surfaces, interaction posture, and Figma usage boundary.
-- [docs/CODE_STYLE.md](docs/CODE_STYLE.md) defines engineering style, naming, data-flow, and documentation expectations.
-- [docs/TASK_TEMPLATE.md](docs/TASK_TEMPLATE.md) gives the standard task shape for implementation and review.
-- [docs/spec](docs/spec) contains product specs for the first authoring loops and runtime semantics.
-- [docs/adr](docs/adr) records product and architecture decisions.
-- [CHANGELOG.md](CHANGELOG.md) tracks product-document and implementation changes.
+## 授权
 
-## Current Status
-
-This repository contains the product-document baseline, the executable MVP1 core scaffold, and the first ordinary-dialogue Studio vertical slice. The implementation proves the source-of-truth Document core plus a browser-visible Writing, Canvas, Preview, and Export loop:
-
-For daily development, use the fast gate:
-
-```bash
-npm run check:fast
-```
-
-For milestone handoff, use the full gate:
-
-```bash
-npm run check:full
-```
-
-For the MVP1 creator loop specifically, use:
-
-```bash
-npm run verify:mvp1
-```
-
-## Run MVP1 Locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open `http://127.0.0.1:5173/`.
-
-The current vertical slice proves the first MVP creator loop:
-
-1. Write story content in Writing.
-2. Group multiple content items into one player advance.
-3. Adjust minimal visual presentation in Canvas while writing back to the Document.
-4. Preview the result with shared runtime semantics.
-5. Export a minimal local playable package with visible story logic preserved.
+Taro 是一个开源项目（待定 License）。

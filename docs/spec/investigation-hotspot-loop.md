@@ -1,8 +1,8 @@
 # Spec: Investigation Hotspot Loop
 
-Last updated: 2026-05-15
+Last updated: 2026-06-24
 
-Status: Alpha/later product loop. This is not part of MVP1.
+Status: Alpha/later product loop. This is not part of MVP.
 
 ## Goal
 
@@ -10,10 +10,10 @@ Define the creator loop for an investigation room with clickable hotspots, viewe
 
 ## Creator Flow
 
-1. Creator inserts an investigation hotspot template.
-2. Taro generates ordinary editable story structure.
-3. Creator defines a background image and three hotspot regions.
-4. Each hotspot emits a visible trigger result.
+1. Creator inserts an investigation hotspot template in the unified interface.
+2. Taro generates ordinary editable Document structure (Group + Event bindings).
+3. Creator defines a background image and three hotspot regions on the Stage Canvas.
+4. Each hotspot region automatically maps to a `click` trigger on that component.
 5. Each trigger result writes a viewed record and jumps to a branch.
 6. Each branch returns to the investigation choice.
 7. A condition checks whether all required viewed records are true.
@@ -21,38 +21,38 @@ Define the creator loop for an investigation room with clickable hotspots, viewe
 
 ## Generated Structure
 
-The template may generate:
+The template generates:
 
-- A Group containing the interaction capability.
-- Three hotspot trigger bindings.
-- Three viewed records.
+- A Group containing the interaction component.
+- Three hotspot event bindings (`trigger: hotspot_1_clicked`).
+- Three viewed records in the Record Dictionary.
 - Three branch targets.
 - A completion condition.
 - A continuation jump.
 
-After insertion, this structure is editable as normal Taro content.
+After insertion, this structure is editable as normal Taro event bindings.
 
-## Writing Representation
+## Script Flow Representation
 
-Writing must show:
+The Script Flow must show:
 
-- Hotspot interaction item.
-- Hotspot trigger names or labels.
+- The Hotspot Component node.
+- Event bindings for hotspot clicks.
 - Record writes for viewed status.
 - Return jumps.
-- Completion condition.
+- Completion condition logic.
 
-Compact representation is acceptable if it can be expanded.
+Compact representation (syntax sugar) is acceptable if it can be expanded.
 
-## Canvas Representation
+## Stage Canvas Representation
 
-Canvas must show:
+The Stage Canvas must show:
 
 - Background image.
 - Hotspot regions.
 - Hover and selected states.
-- Trigger binding links to generated actions.
-- Path context when previewing each branch.
+- When selecting a hotspot, its associated event bindings are highlighted in the Timeline and Script Flow.
+- Path context is properly maintained when previewing each branch.
 
 ## Preview Requirements
 

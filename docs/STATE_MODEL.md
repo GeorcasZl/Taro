@@ -1,350 +1,132 @@
-# Taro State Model
+# Taro 数据模型与状态
 
-Last updated: 2026-05-15
+## 目的
 
-## Purpose
+本文档定义了 Taro 系统内部的数据结构如何组织，状态如何流转。它解释了什么是“唯一数据源”（Document），以及在运行时引擎如何处理复杂的分支逻辑和环境状态。
 
-This document defines the conceptual state model for Taro. It is product-level and implementation-guiding; exact storage formats may evolve, but they must preserve these identities, relationships, and invariants.
+## 状态分层
 
-## Model Layers
+Taro 的状态分为五个严格区分的层次：
 
-Taro separates five state layers:
+1. **Document 状态（Document State）**
+   唯一的持久化状态。包含了创作者编写的所有内容（Group、事件绑定、记录定义等）。
+2. **舞台状态（Stage State）**
+   派生状态。表示在特定时刻（或特定路径上下文下），视觉和听觉表现的样子。
+3. **记录状态（Record State）**
+   运行时可变状态。包含当前玩家游玩时，所有变量（旗标、好感度、背包）的当前值。
+4. **临时播放状态（Temporary Play State）**
+   运行时极短周期的界面状态。比如“这段字正在打字机效果输出中”、“这个动画还没播完”。此类状态不被存档包含。
+5. **编辑器状态（Editor State）**
+   纯编辑器端的界面状态。比如“当前选中的 Group 是哪个”、“画布的缩放比例是多少”。
 
-1. **Document state**: persistent authoring truth.
-2. **Stage state**: persistent player-facing presentation derived along a path.
-3. **Story record state**: persistent narrative state used by conditions and branches.
-4. **Temporary play state**: runtime interaction state that does not become story truth unless recorded.
-5. **Editor state**: selection, focus, zoom, scroll, and panel state.
+## Document 结构
 
-Only Document state is the durable authoring source. Stage and story record state are derived or simulated from Document commands.
+`Document` 是一个树状+图状混合的数据结构，包含以下核心部分：
 
-## Document
+### 项目元数据
+项目的基本信息，如名称、版本、作者等。
 
-The Document contains:
+### 故事流（Story Flow）
+由一系列相互连接的 `Group` 和附着于其上的事件绑定组成。它是叙事逻辑的骨干。
 
-- Project metadata
-- Story flow
-- Groups
-- Content items
-- Stable positions
-- Records
-- Resources
-- Display modes
-- Plugin capability references
-- Templates generated into normal structure
-- Diagnostics metadata
+### 资源（Resources）
+对外部文件（图片、音频、字体等）的引用清单，所有的资源都有一个唯一的内部 ID 进行追踪。
 
-The Document must be serializable, diffable, migratable, and exportable.
+### 分组树（Folder Tree）
+纯组织概念，像文件系统的文件夹一样可以无限嵌套。
+**注意：分组（Folder）没有执行语义。** 它不会在运行时产生任何影响，单纯为了帮助创作者在庞大的项目中对 `Group` 进行归类整理。
 
-## Story Flow
+## 位置（Position）
 
-Story flow is the ordered and structured body of the work.
+在 Document 的流中，**位置（Position）** 是一个非常重要的抽象概念。它指的是两个叙事元素之间的缝隙（例如：在选项 A 和选项 B 之间）。
+当产生新的内容插入、删除，或者不同创作者在进行分支合并时，“位置”提供了唯一确定的坐标系。
 
-It contains Groups and flow relations:
+## Group（叙事步骤）
 
-- Linear next relation
-- Choice option target
-- Condition branch target
-- Jump target
-- Interaction result target
-- Named position target
+`Group` 是 Taro 内容组织和故事推进的原子单元。
 
-Line numbers are editor presentation. Stable positions are the durable identity.
+### 字段定义
+- `id`: 唯一标识符。
+- `advance_mode`: 结束条件配置。
+- `metadata`: 杂项元数据。
+- `folder_id`: 归属的分组位置。
 
-## Stable Position
+### 结束条件配置（advance_mode）
+Group 并不是一个简单的“点一下继续”的块，它的推进逻辑由 `advance_mode` 决定：
+- `click`：等待玩家点击屏幕后，结束当前 Group 并进入下一个（默认 VN 对话模式）。
+- `trigger`：等待特定的事件或条件满足时推进（如：在 RPG 场景中，找到了所有线索）。
+- `auto`：当 Group 内部所有设定的表现（如文本显示完、动画播完）结束后，自动推进（如：无缝过场动画）。
 
-A stable position identifies a location in the story flow.
+### Group 内的事件绑定
+Group 内部不包含顺序执行的“指令”，而是包含了一组无序的**事件绑定（Event Bindings）**。
 
-Required behavior:
+## 事件模型
 
-- Survives text edits around it.
-- Can be referenced by jumps and diagnostics.
-- Can be renamed when exposed as a named target.
-- Can be moved while preserving references.
-- Can report all inbound references before deletion.
+底层引擎通过事件模型（trigger/response）来调度所有行为。
 
-## Group
+### 触发器（Trigger）
+监听何时该采取行动。
+- **内置触发器类型**：`group_enter`（进入该 Group 时）, `click`（玩家点击时）, `text_complete`（文本显示完毕时）, `condition_met`（某变量满足条件时）, `timer`（倒计时结束时）。
+- **组件自定义触发器**：如 `inventory_opened`（玩家打开了背包组件）。
 
-A Group is the player advance unit.
+### 响应（Response）
+实际执行的动作。
+- **内置响应类型**：`show_text`（显示文本）, `set_background`（换背景）, `play_sound`（播放音效）, `advance`（结束当前 Group，推进故事）, `set_record`（修改变量）。
+- **组件自定义响应**：如 `move_character_to_coord`（让小人移动到某个坐标）。
 
-Fields:
+### 语法糖展开规则
+创作者不必每次都手动编写 trigger 和 response。当他们在 Studio 中输入普通的“对话”时，引擎会使用**语法糖**自动展开。
+例如，输入一句对话 `小明: 你好`，系统实际创建的绑定是：
+- 绑定 1: `trigger: group_enter` → `response: show_text(小明, "你好")`
+- 绑定 2: `trigger: text_complete + click` → `response: advance`
 
-- `id`: stable Group identity.
-- `position`: stable story position.
-- `items`: ordered content items.
-- `incoming`: derived inbound flow references.
-- `outgoing`: derived outgoing flow references.
-- `metadata`: optional authoring labels, comments, collapsed state, and diagnostics.
+## 舞台状态（Stage State）
 
-Rules:
+舞台状态描述了屏幕上的视觉呈现。
 
-- Enter creates a new Group in Writing.
-- Option/Alt+Enter or another explicit same-Group insertion adds a content item to the current Group.
-- Same-Group insertion may target the space between two existing items. The resulting `items` order is the source of truth for Preview and Export.
-- Empty text items are temporary focused editing affordances. If an empty text item loses focus, it is removed unless it is the only editable affordance for an otherwise empty document.
-- Backspace on a focused empty text item removes that item and moves focus to the previous text item, next text item, or Group-level insertion target.
-- Shift+Enter creates a line break inside the current text item instead of creating a new Group.
-- Split creates two Groups and moves selected items.
-- Merge combines adjacent compatible Groups and preserves item order.
-- A Group may have zero text items if it performs stage, sound, wait, interaction, record, or action behavior.
-- MVP1 may create a stage-only Group after the selected Group for an explicit background change; the Group participates in linear stage-state continuation like any other Group.
+### 路径驱动的状态派生
+Taro **不存在**一个类似于 `SceneManager.CurrentScene` 的全局对象。任何一个时刻的舞台状态，都是由**路径上下文（Path Context）**推演而来的。
 
-## Content Item
+### 路径上下文（Path Context）
+从故事的起点开始，经过了一系列的节点、分支选择，最终抵达当前的 `Group`。这条经过的路径所累积的所有改变视觉的响应（如：在节点 A 换了夜景背景，在节点 C 隐藏了某角色），综合起来就是抵达该节点的“路径上下文”。
+这保证了在时间线上任意跳转（Scrubbing）或编辑器中查看任意分支时，舞台状态永远是确定且正确的。
 
-A content item is one executable or presentable element inside a Group.
+### 分支合流状态差异
+当两条分支最终重新汇合到一个节点时，如果两条路径上累积的视觉状态不一致（例如：分支 A 中角色在笑，分支 B 中角色在哭），Taro 的诊断系统会检测到这一**差异（Difference）**，并要求创作者在合流处通过显式的状态重置来解决冲突。
 
-Common item kinds:
+## 记录系统（Records）
 
-- `text`
-- `stage_change`
-- `sound_change`
-- `wait`
-- `instant_effect`
-- `interaction`
-- `record_write`
-- `choice`
-- `condition`
-- `jump`
-- `result_action`
-- `plugin_capability`
+记录系统用于管理游戏中那些动态变化的逻辑变量。
 
-Shared fields:
+### 结构化类型
+突破了传统简单的键值对限制，Taro 支持：
+- **基础类型**：布尔值（boolean）、数值（number）、文本（text）。
+- **复合类型**：对象（object，如 `{ str: 10, dex: 5 }`）、数组（array，如背包物品列表）。
 
-- `id`: stable item identity.
-- `group_id`: owning Group.
-- `order`: order inside the Group.
-- `kind`: item kind.
-- `blocking`: whether execution waits before later items.
-- `source_range`: editable source range or structural origin.
-- `diagnostics`: linked issues.
+### 条件求值
+引擎层内置了安全的条件表达式求值器。触发器可以通过查询特定的记录状态来决定是否被激活，或者计算出不同的文本（如：显示 `你拥有 [item.count] 个苹果`）。
 
-## Execution Model
+### 记录作用域
+- **全局作用域**：贯穿整个游戏进程的状态（如：全局真结局解锁旗标）。
+- **当前周目作用域**：仅在当前游玩路径中有效（如：当前关卡的血量）。
 
-Within a Group:
+## 显示模式（Display Mode）
 
-1. Items execute in order by default.
-2. Blocking items pause later items until complete.
-3. Non-blocking items may start and let later items continue.
-4. Wait items block until their duration or condition completes.
-5. Interaction items usually block until a trigger result is emitted or cancelled.
-6. Text blocking behavior is controlled by display mode.
-7. Group completion waits for all required blocking behavior and result actions.
+显示模式定义了一段文本内容“看起来”是什么样，以及它的基础交互方式。
+- **内置显示模式**：全屏叙述模式（NVL）、气泡对话框（ADV）等。
+- **组件扩展的显示模式**：通过组件，可以引入诸如手机聊天界面、弹幕等全新的显示模式。
 
-The model avoids a multi-track timeline. Concurrency is explicit through non-blocking item declarations.
+## 资源引用（Resource Reference）
 
-Confirmed default behavior:
+所有的资源在存入 Taro 项目时都被赋予唯一标识，并通过内部的资产映射表进行管理。这意味着在外部修改资源文件名并不会破坏项目内部的故事逻辑。
 
-- Ordinary text is blocking by default.
-- Special display modes may make text non-blocking.
-- Project default after Group completion is to wait for player advance.
-- Group or display mode settings may explicitly auto-advance.
+## 诊断模型（Diagnostics）
 
-## Stage State
+状态模型中包含了诊断反馈循环。如果 `Document` 中存在断裂的引用（比如引用了一个不存在的变量），或者存在无解的舞台状态冲突，系统不会直接崩溃，而是会派生出包含错误信息的诊断状态，并在 Studio 中以可导航的方式展示给创作者。
 
-Stage state is the persistent player-facing presentation context along a path.
+## 运行时快照方向（存档/读档）
 
-Examples:
-
-- Background
-- Character sprites
-- Character positions
-- Character expressions
-- BGM
-- Ambience
-- Persistent overlays
-- Screen tone
-- Active display container defaults
-
-Stage state is changed by `stage_change`, `sound_change`, and compatible plugin capability items.
-
-Stage state is not globally owned by a scene. It is derived by applying changes along a selected path context.
-
-Canvas and Preview must distinguish:
-
-- Current stage state: inherited from the selected path context.
-- Current Group stage changes: new changes introduced by the current Group.
-- Instant effects: events that occur and do not persist.
-- Waits: timing inside the current Group.
-
-## Story Record State
-
-Records represent story state in creator-facing language.
-
-Record categories:
-
-- Boolean flags
-- Numbers
-- Text values
-- Enumerations
-- Inventory-like collections
-- Relationship values
-- Route progress
-- Viewed status
-
-MVP record editing uses basic record types and simple comparisons. Advanced expressions are allowed only as a later, clearly marked path.
-
-Rules:
-
-- Conditions read records.
-- Record writes change records.
-- Advanced expressions may read records through a constrained expression system.
-- Records have owners, descriptions, types, default values, and reference tracking.
-- Ordinary conditions should primarily read records. Conditions that read stage state or runtime context belong to an advanced path and must be marked in UI and diagnostics.
-
-## Temporary Play State
-
-Temporary play state includes:
-
-- Hover
-- Focus
-- Current timer value
-- Drag state
-- Press duration
-- Input composition
-- Animation progress
-
-Temporary play state does not affect story branches unless explicitly converted into a record write or result action.
-
-## Editor State
-
-Editor state includes:
-
-- Current selection
-- Cursor
-- Open panels
-- Canvas zoom
-- Current path context
-- Scroll positions
-- Preview playback control state
-- Expanded and collapsed UI sections
-
-Editor state can be saved as workspace preference, but it is not story truth.
-
-Selection is editor state. Selecting a Group, item, range, Canvas object, or Inspector control synchronizes Studio surfaces but must not be modeled as a persistent Document command.
-
-## Plugin Private State
-
-Plugin private state may exist for runtime implementation.
-
-Rules:
-
-- It must be serializable when required for save/load.
-- It must declare replay and preview semantics.
-- It must declare migration behavior.
-- It must not hide critical story flow, record writes, conditions, or jumps.
-
-## Path Context
-
-A path context is a selected route from an entry point to the current position.
-
-It is needed when:
-
-- A position has multiple predecessors.
-- Branches merge after divergent stage state.
-- Preview starts from the middle.
-- Canvas renders a current stage at a merge point.
-
-Canvas and Preview must show the active path context when it affects state.
-
-## Branch Merge State Differences
-
-When multiple paths reach the same position, Taro compares derived stage state.
-
-If differences exist, the Document can represent one of three outcomes:
-
-- `unresolved_difference`: creator has not handled it.
-- `accepted_difference`: creator accepts path-dependent presentation after merge.
-- `normalized_state`: creator sets a unified stage state at or before the merge.
-
-Unresolved differences are diagnostics. Export policy may block or warn depending on severity.
-
-## Display Mode
-
-A display mode defines how content appears.
-
-Examples:
-
-- Dialogue bubble
-- Narration panel
-- Center text
-- Phone chat
-- Background hotspot overlay
-
-Display mode owns presentation rules and may define whether text display blocks Group progression.
-
-Display mode may also define:
-
-- Layout and screen position.
-- Entry and exit behavior.
-- Text reveal behavior.
-- Player click behavior for reading progression.
-- How previous content is replaced, retained, or dismissed.
-- How multiple same-Group content items are arranged.
-
-Display mode click behavior is separate from interaction trigger behavior. A display click may complete text, skip a skippable wait, or enter the next Group. An interaction click emits a named trigger result that binds to visible result actions.
-
-## Interaction Capability
-
-An interaction capability defines how the player provides input.
-
-Examples:
-
-- Click option
-- Click hotspot
-- Long press
-- Drag object
-- Choose reply
-
-Interaction capability emits named trigger results. Trigger results bind to visible Taro result actions.
-
-## Result Action
-
-Result actions map triggers to story effects.
-
-Examples:
-
-- Continue
-- Continue current Group
-- Enter next Group
-- Jump to position
-- Write record
-- Play instant effect
-- Wait
-- Open nested choice
-
-Critical result actions must be visible in Writing, Canvas, or Inspector.
-
-Return-to-choice behavior should not be a hidden runtime stack by default. Templates may generate explicit return jumps and targets, and those generated structures remain ordinary editable story structure.
-
-## Resource Reference
-
-Resources include images, audio, fonts, plugin assets, and export files.
-
-Rules:
-
-- Resource references must be stable.
-- Missing resources create diagnostics.
-- Export resolves resources from Document references, not from ad hoc UI state.
-
-## Diagnostics Model
-
-A diagnostic contains:
-
-- `code`
-- `severity`
-- `message`
-- `source`
-- `surface`
-- `blocking_export`
-- `suggested_fix`
-- `trace`
-
-Diagnostics are derived from the Document and can link back to Writing, Canvas, Inspector, Library, Plugins, or Export.
-
-## Runtime Snapshot Direction
-
-Save/load is not part of the current MVP, but the model should not block it.
-
-Future player saves may include position, current Group, story records, path history, current path context, necessary stage snapshots, current Group execution progress, display-mode runtime state, unresolved trigger context, and plugin private state declared as save-required.
-
-Necessary snapshots are restore aids, not a second authoring source of truth. Any state that affects later story conditions should be represented as Records or visible actions.
+当玩家存取档时，引擎捕获的快照仅包含：
+1. 当前的 `Group` 和 `Position`（停在故事哪里）。
+2. 当前周目作用域的全部**记录状态（Record State）**。
+（舞台状态将被丢弃，并在读档时由引擎根据位置和上下文重新推演，以保证数据干净且体积小巧）。

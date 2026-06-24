@@ -1,203 +1,62 @@
-# Taro Roadmap
+# Taro 路线图
 
-Last updated: 2026-05-15
+## 路线图原则
 
-## Roadmap Principle
+Taro 的演进不是按照“写完前端写后端”的技术分层来推进的。每一个 Phase（阶段）都必须证明一个完整的、闭环的**创作者工作流（Creator Loop）**。前一个阶段验证的地基稳固后，才能进入下一个阶段叠加复杂度。
 
-The roadmap is organized around proving creator loops, not around accumulating isolated features.
+## Phase 0: 产品基线
 
-Every milestone must make the product thesis more testable:
+**目标**：确立 Taro v2 的核心概念体系和架构设计，为后续开发提供明确的书面准则。
+**当前状态**：进行中（已完成重写）。
 
-> A creator can write readable branching story text, add rich presentation and interaction, preview it with correct state, diagnose problems, and export a playable result.
+- 统一产品语言和架构模型。
+- 更新并清理 docs 目录。
 
-## Current MVP Vertical Slice
+## Phase 1: 核心引擎 + 统一编辑界面（MVP）
 
-Before broad alpha work, Taro should prove a narrow ordinary VN dialogue loop:
+**目标**：验证事件驱动引擎与统一界面的最简核心循环。
+**创作者循环**：在统一界面写对话 → 调整视觉 → 看实时预览 → 导出桌面应用。
+**关键能力**：
+- **数据结构**：建立以 Document 为唯一数据源的模型。实现线性的 Group 流。
+- **界面体验**：跑通包含剧本流、舞台画布、时间线的协同界面原型。
+- **引擎层**：实现基础的事件总线（Event Bus），支持最基本的触发器（如 `group_enter`、`click`）和响应（如 `show_text`、`set_background`）。
+- **打包导出**：提供将简单作品封装至 Electron/Tauri 并导出的端到端工具链。
+**退出标准**：一个非开发人员能够独立使用工具，产出一个有画面、有声音、能点按过文字的线性桌面小游戏。
 
-1. Writing creates structured Groups from dialogue.
-2. A global keyboard add/search box inserts or changes content based on context.
-3. Canvas edits minimal visual presentation for the current Group while writing back to the Document.
-4. Preview plays the same Group execution and click progression that Export uses.
-5. Export creates a minimal local playable package.
+## Phase 2: 分支叙事与结构树
 
-Plugin capabilities, investigation templates, phone chat, full Records management, save/load UI, Auto Mode, rollback, marketplace, and mobile editor remain outside this MVP slice.
+**目标**：验证引擎在多线网状结构中的状态推演能力及编辑体验。
+**创作者循环**：写选项/条件 → 在缩放的结构树中查看分支全貌 → 预览并在不同分支路径间测试状态。
+**关键能力**：
+- **跳转逻辑**：引入条件节点、选项分支、强制跳转等非线性流程控制指令。
+- **记录系统（Records）**：实现基于布尔值和数值的简单变量读写。
+- **派生视图加强**：实现剧本流的分支缩进/并列渲染，实现结构树的缩放与流转；实现基于节点关系自动渲染的全局流程图视图。
+- **路径上下文计算**：保证在跨越多个分支再合流后，舞台状态能够根据经过的路径被正确回溯和推演。
+**退出标准**：能够完成类似于老式 Gamebook 或者基本带好感度分支的视觉小说。
 
-## Phase 0: Product Baseline
+## Phase 3: 组件系统与多模式叙事
 
-Goal: make the product model explicit enough that implementation does not drift.
+**目标**：开放底层的表现和交互扩展能力，验证“Taro 不仅仅是 VN 编辑器”。
+**创作者循环**：向项目注册自定义组件 → 在剧本流或画布中使用它们 → 导出包含复杂机制的作品。
+**关键能力**：
+- **组件契约（Component Contract）**：正式确立第三方组件的清单格式与事件输入/输出声明规范。
+- **结构化记录**：记录系统升级，支持对象、数组等复杂类型结构以匹配高级组件需求。
+- **内置模版探索**：基于组件规范，官方推出“RPG 场景移动”与“手机聊天界面”作为第一批高阶范例组件。
+**退出标准**：不仅能做传统视觉小说，开发者编写一个自定义组件后，能让工具跑出一个具有背包逻辑和解谜探索机制的小游戏。
 
-Deliverables:
+## Phase 4: Alpha 稳定化
 
-- Product description
-- Architecture document
-- State model
-- API contracts
-- MVP definition
-- Specs for first authoring loops
-- Runtime semantics spec
-- Testing and dogfood plan
-- ADRs for core model decisions
+**目标**：将一个极客原型打磨为可以让真实创作者进行长篇创作的专业工具。
+**关键能力**：
+- **状态快照与存读档**：引擎层提供完善的游戏进度持久化保存机制。
+- **Undo/Redo**：在多视图协同编辑下的全局撤销系统。
+- **资源管理增强**：自动搜集未使用素材、资源缺失的完整后台诊断系统。
+- **性能优化**：确保拥有 5000+ Group 的大体积项目在缩放结构树和推演状态时不卡顿。
+**退出标准**：邀请 3-5 位独立创作者使用 Taro 完整制作一款 30 分钟时长的成熟商业品质游戏（包含美术外包导入、数百个分支等现实开发挑战）。
 
-Exit evidence:
+## 延期事项（暂不纳入当前路线图）
 
-- Documentation files exist and cross-link cleanly.
-- No core model is described in two conflicting ways.
-- The five product proofs are represented in specs and tests.
-
-## Phase 1: Document Core And Writing Loop
-
-Goal: creators can write ordinary VN dialogue as structured Groups, preview it, and export a minimal local playable package.
-
-Creator loop:
-
-1. Write ordinary dialogue.
-2. Create the next Group with Enter.
-3. Add content to the same Group with an explicit same-Group action.
-4. Split and merge Groups.
-5. Add simple record writes and jumps.
-6. Adjust minimal visual presentation in Canvas.
-7. Preview the written flow.
-8. Export a minimal local playable package.
-
-Key capabilities:
-
-- Project and Document schema.
-- Stable positions.
-- Group and content-item editing.
-- Speaker and display-mode metadata.
-- Basic record definitions.
-- Basic choice and jump structures.
-- Minimal Canvas current-Group visual editing.
-- Shared Preview and Export runtime semantics.
-- Minimal local export package.
-- Undo and redo over Document commands.
-
-Exit evidence:
-
-- Ordinary dialogue loop passes.
-- Multi-content Group loop passes.
-- Prose is protected from accidental command parsing.
-- Preview uses Document state rather than ad hoc UI state.
-- Exported local package matches Preview for the ordinary dialogue loop.
-
-## Phase 2: Canvas And Path-Aware Preview
-
-Goal: Canvas can inspect structure and stage while remaining tied to Writing.
-
-Creator loop:
-
-1. Select a story position in Writing.
-2. See the same position in Canvas.
-3. Choose a path context when a position has multiple predecessors.
-4. Edit stage presentation in Canvas.
-5. See those edits represented in the story flow.
-6. Preview with traceable diagnostics.
-
-Key capabilities:
-
-- Structure overview.
-- Path context selector.
-- Current Group visual editor.
-- Stage state derivation.
-- Branch merge state-difference detection.
-- Preview controls: play, pause, replay Group, step item, skip wait, reset, inspect state.
-
-Exit evidence:
-
-- Branch merge loop passes.
-- Canvas edits map back to Document.
-- Preview can explain which path produced the rendered stage.
-
-## Phase 3: Records, Conditions, And Diagnostics
-
-Goal: story state becomes powerful without exposing ordinary creators to code-first logic.
-
-Creator loop:
-
-1. Create records through creator-facing language.
-2. Build conditions through fields, operators, values, chips, and search.
-3. Bind choices and interaction results to record writes and jumps.
-4. Diagnose missing records, invalid values, unreachable targets, and unresolved state differences.
-
-Key capabilities:
-
-- Record manager.
-- Condition builder.
-- Advanced expression lane.
-- Reference tracking.
-- Diagnostics panel.
-- Source-linked issue navigation.
-
-Exit evidence:
-
-- Investigate-room loop passes.
-- Conditions are visible and editable.
-- Export blocks broken flow with actionable diagnostics.
-
-## Phase 4: Plugins, Templates, And Library
-
-Goal: creators can use richer interactions and templates while story logic stays visible.
-
-Creator loop:
-
-1. Install or enable a plugin.
-2. Insert a plugin-provided capability or template.
-3. See generated triggers, records, conditions, and actions.
-4. Edit the generated structure as normal Taro content.
-5. Preview and export with plugin diagnostics.
-
-Key capabilities:
-
-- Plugin manifest loading.
-- Capability discovery.
-- Template generation.
-- Missing plugin placeholders.
-- Plugin upgrade and migration diagnostics.
-- Export plugin bundling.
-
-Exit evidence:
-
-- Plugin phone-chat loop passes.
-- Plugins cannot hide critical flow control.
-- Templates generate ordinary editable structure.
-
-## Phase 5: Alpha Studio Hardening
-
-Goal: Taro becomes coherent enough for sustained creator dogfood.
-
-Creator loop:
-
-1. Start a project.
-2. Write a branching story with records and interactions.
-3. Navigate through Writing, Canvas, Preview, Library, Records, Plugins, Issues, Settings, and Export.
-4. Fix diagnostics.
-5. Export a playable build.
-6. Reopen the project and continue editing.
-
-Key capabilities:
-
-- Project persistence.
-- Asset handling.
-- Import and export robustness.
-- Keyboard-first authoring flows.
-- Accessibility and text overflow checks.
-- Error recovery.
-- Dogfood friction log.
-
-Exit evidence:
-
-- A small complete project can be authored from scratch.
-- Preview and export behavior match.
-- Blocking diagnostics have source links.
-- The product can be tested by browser automation and manual creator walkthroughs.
-
-## Deferrals
-
-These are intentionally outside the first alpha proof:
-
-- Full marketplace and payment flows.
-- Multi-user collaboration.
-- Full custom game-engine scripting.
-- Timeline animation editor.
-- Mobile editor.
-- Long-lived template instance system as a default Taro feature.
+- **多人实时协作**：需重构网络层实现 CRDT/OT，投入巨大。优先鼓励借助外部版本控制（如 Git）。
+- **布局高度自定义**：拖拽重排面板并非早期核心痛点，前期强制采用固定高效的布局组合。
+- **多端直接导出**：暂时不解决移动端性能问题和小程序包体限制，全力深耕桌面端体验。
+- **在线素材商城与资产共享社区**。
